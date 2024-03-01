@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
+
 typedef struct Process {
 int id ; //Process ID/Arrival time in this case
 int array[1000] ; //Time for the process to be executed
@@ -19,21 +20,6 @@ typedef struct Queue {
   int front;
   int size;
 } Queue;
-
-//Function that adds one to a processes timeRunning for all the processes in the queue
-void addOneToTimeRunning(Queue *qp){
-  for(int i=0; i<qp->size; i++){
-    if(qp==NULL){
-      break;
-    }
-    if(qp->array[i].array[qp->array[i].pointer]!=-1){
-      qp->array[i].timeRunning++;
-      printf("%d timeRunning: %d\n",qp->array[i].id , qp->array[i].timeRunning);
-    }    
-  }
-}
-
-
 
 int isEmptyQueue(Queue q) {
   return (q.back == q.front);
@@ -101,11 +87,13 @@ void freeQueue (Queue q) {
 
 
 int main(){
-    int j=0;
+
+  //SCANNING THE INPUT
+  int j=0;
   int flag = 0;
   int c=0;
   int i = 0;
-  int totalTime=0;
+
 
   Queue ready = newQueue(1000);
   while (1) {
@@ -133,19 +121,13 @@ int main(){
       break;
     }
     
+
     enqueue(input, &ready);
     i++;
   }
-
-  Queue some = ready; 
-    for(int k=0; k<i; k++){
-    Process temp = dequeue(&some);
-    for(int l=0; l<temp.size; l++){
-      printf("%d ", temp.array[l]);
-    }
-    printf("\n");
-  }
-
+  
+  //INITIALIZING VARIABLES
+  int totalTime=0;
   int tick=0;
   Queue CPU = newQueue(1000);
   Queue IO = newQueue(1000); 
@@ -158,55 +140,34 @@ int main(){
 
   int workingCPUTime = 0;
   int workingIOTime = 0;
-  int waitingTime=0;
-  
+
+  int itemsWitingForCPU = 0;
+  int itemsWitingForIO = 0;
+
+
   //The main loop of the program and the tick counter
-  while(!areQueuesEmpty(CPU, IO, ready) || isCPUWorking || isIOWorking){
+  while(!(areQueuesEmpty(CPU, IO, ready) )|| isCPUWorking || isIOWorking){
 
     //check if the process has arrived
     if(!isEmptyQueue(ready) && ready.array[ready.front].array[0]==tick){
       Process temp = dequeue(&ready);
       temp.pointer++;
       enqueue(temp, &CPU);
+      itemsWitingForCPU++;
     }
-    //check if the CPU is done working and if so, put it in the IO queue if not increment the time
     if(isCPUWorking){
-      if(workingCPUTime==workingCPU.array[workingCPU.pointer]){
-        isCPUWorking = false;
-        if(workingCPU.array[workingCPU.pointer+1]!=-1){
-          workingCPU.pointer++;
-          enqueue(workingCPU, &IO);
-        }
-        else{
-          printf("workingCPU.timeRunning: %d\n", workingCPU.timeRunning);
-          totalTime+=workingCPU.timeRunning;
-        }
-      }
-      else{
-        workingCPUTime++;
-      }
+      workingCPU.timeRunning++;
+      workingCPUTime++;
     }
-    //check if the IO is done working and if so, put it in the ready queue if not increment the time
     if(isIOWorking){
-      if(workingIOTime==workingIO.array[workingIO.pointer]){
-        isIOWorking = false;
-        if(workingIO.array[workingIO.pointer+1]!=-1){
-          workingIO.pointer++;
-          enqueue(workingIO, &CPU);
-        }
-        else{
-          printf("workingIO.timeRunning: %d\n", workingIO.timeRunning);
-          totalTime+=workingIO.timeRunning;
-        }
-      }
-      else{
-        workingIOTime++;
-      }
+      workingIO.timeRunning++;
+      workingIOTime++;
     }
-    //check if the CPU is working, if not get a new process
+
     if(!isCPUWorking){
       if(!isEmptyQueue(CPU)){
         workingCPU = dequeue(&CPU);
+        itemsWitingForCPU--;
         workingCPUTime=0;
         isCPUWorking = true;
       }
@@ -215,28 +176,92 @@ int main(){
     if(!isIOWorking){
       if(!isEmptyQueue(IO)){
         workingIO = dequeue(&IO);
+        itemsWitingForIO--;
         workingIOTime=0;
         isIOWorking = true;
       }
     }
-    addOneToTimeRunning(&CPU);
-    addOneToTimeRunning(&IO);
+    //check if the CPU is done working and if so, put it in the IO queue if not increment the time
     if(isCPUWorking){
-      workingCPU.timeRunning++;
-      printf("%d timeRunning: %d\n",workingCPU.id , workingCPU.timeRunning);
+      if(workingCPUTime==workingCPU.array[workingCPU.pointer]){
+        workingCPU.pointer++;
+        isCPUWorking = false;
+        workingCPUTime = 0;
+        if(workingCPU.array[workingCPU.pointer]!=-1){
+          enqueue(workingCPU, &IO);
+          itemsWitingForIO++;
+        }
+        else{
+          totalTime+=workingCPU.timeRunning;
+        }
+      }
     }
+    //check if the IO is done working and if so, put it in the ready queue if not increment the time
     if(isIOWorking){
-      workingIO.timeRunning++;
-      printf("%d timeRunning: %d\n",workingIO.id , workingIO.timeRunning);
+      if(workingIOTime==workingIO.array[workingIO.pointer]){
+        workingIO.pointer++;
+        isIOWorking = false;
+        workingIOTime = 0;
+        if(workingIO.array[workingIO.pointer]!=-1){
+          enqueue(workingIO, &CPU);
+          itemsWitingForCPU++;
+        }
+        else{
+          totalTime+=workingIO.timeRunning;
+        }
+      }
     }
-    
+    if(!isCPUWorking){
+      if(!isEmptyQueue(CPU)){
+        workingCPU = dequeue(&CPU);
+        itemsWitingForCPU--;
+        workingCPUTime=0;
+        isCPUWorking = true;
+      }
+    }
+    //check if the IO is working, if not get a new process
+    if(!isIOWorking){
+      if(!isEmptyQueue(IO)){
+        workingIO = dequeue(&IO);
+        itemsWitingForIO--;
+        workingIOTime=0;
+        isIOWorking = true;
+      }
+    }  
+    totalTime+=itemsWitingForCPU+itemsWitingForIO;
     tick++;
     
+    // printf("Tick : %d and totalTime %d\n", tick, totalTime);
+    // if(isCPUWorking){
+    //   printf("Working CPU Time: %d and is CPU wokring %d\n", workingCPUTime, isCPUWorking);
+    //   printf("---------------Process working CPU--------------\n");  
+    //   printf("id:%d\n", workingCPU.id);
+    //   printf("size:%d\n", workingCPU.size);
+    //   for(int k=0; k<workingCPU.size; k++){
+    //     printf("::%d\n", workingCPU.array[k]);
+    //   }
+    //   printf("pointer:%d\n", workingCPU.pointer);
+    //   printf("time:%d\n", workingCPU.timeRunning);
+    //   printf("----------------------------------------\n");
+    // }
+
+    // if(isIOWorking){
+    //   printf("Working IO Time: %d and is IO wokring %d\n", workingIOTime, isIOWorking);
+    //   printf("---------------Process working IO--------------\n");
+    //   printf("id:%d\n", workingIO.id);
+    //   printf("size:%d\n", workingIO.size);
+    //   for(int k=0; k<workingIO.size; k++){
+    //     printf("::%d\n", workingIO.array[k]);
+    //   }
+    //   printf("pointer:%d\n", workingIO.pointer);
+    //   printf("time:%d\n", workingIO.timeRunning);
+    //   printf("----------------------------------------\n");
+    // }
 
   }
-
-  printf("%d\n", tick);
-  printf("%d\n", totalTime/i);
+  
+  // printf("%d\n", tick);
+  printf("%d\n", (int)totalTime/i);
 
   return 0;
 }
