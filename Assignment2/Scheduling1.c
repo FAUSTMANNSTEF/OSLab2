@@ -182,7 +182,7 @@ int main()
     freeQueue(initial);
 
     // INITIALIZING VARIABLES
-    unsigned long totalTime = 0;
+    float totalTime = 0.0;
     unsigned long tick = 0;
     Queue CPU = newQueue(actualqueuesize);
     Queue IO = newQueue(actualqueuesize);
@@ -343,7 +343,7 @@ int main()
         return 0;
     }
     // printf("%d\n", tick);
-    printf("%ld\n", (int)totalTime / actualqueuesize);
+    printf("%ld\n", (unsigned long)totalTime / actualqueuesize);
     freeQueue(CPU);
     freeQueue(IO);
     freeQueue(ready);
