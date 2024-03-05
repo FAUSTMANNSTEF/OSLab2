@@ -1,3 +1,4 @@
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -45,12 +46,12 @@ int main()
             pagefaults++;
         }
 
-        printf("page:%d Frames: %d index: %d\n", page, frames, index);
-        for (int i = 0; i < frames; i++)
-        {
-            printf("%d ", framearray[i]);
-        }
-        printf("\n");
+        // printf("page:%d Frames: %d index: %d\n", page, frames, index);
+        // for (int i = 0; i < frames; i++)
+        // {
+        //     printf("%d ", framearray[i]);
+        // }
+        // printf("\n");
 
         scanf("%c", &input);
     }
